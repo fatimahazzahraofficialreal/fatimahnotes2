@@ -1,6 +1,16 @@
 # fatimahnotes
 Fatimah Notes is a modern journaling web app built with PHP, MySQL, HTML, CSS, and Vanilla JS. It allows users to write and organize journals with a Word-style rich text editor — including images, videos, YouTube embeds, autosave, and mood/tags system.
 
+<img width="1366" height="402" alt="image" src="https://github.com/user-attachments/assets/d87a32eb-ce05-4918-8533-72fc2d2cc085" />
+<img width="1366" height="564" alt="image" src="https://github.com/user-attachments/assets/1b38a91d-a74f-43b1-9c84-3b42a0a52ac8" />
+<img width="1366" height="395" alt="image" src="https://github.com/user-attachments/assets/90da9f9e-69c0-48a8-92b8-a2dac886ff95" />
+
+
+
+
+
+
+
 ✨ Features
 
 🗂 Journal Dashboard with card view
