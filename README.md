@@ -38,26 +38,9 @@ Backend	PHP (MySQLi)
 Database	MySQL / MariaDB
 Deployment	Any PHP server (XAMPP, Laragon, etc.)
 📁 Project Structure
-fatimahnotes/
-├─ index.php                 # Journal dashboard
-├─ journal.php               # Editor + entry management
-├─ assets/                   # Optional CSS/JS
-├─ backend/
-│  ├─ connect.php
-│  ├─ get_journals.php
-│  ├─ save_journal.php
-│  ├─ delete_journal.php
-│  ├─ list_entries.php
-│  ├─ create_entry.php
-│  ├─ get_entry.php
-│  ├─ update_entry.php
-│  ├─ delete_entry.php
-│  ├─ upload_entry_image.php
-│  └─ upload_entry_video.php
-├─ uploads/
-│  ├─ images/                # Uploaded images
-│  └─ videos/                # Uploaded videos
-└─ README.md
+<img width="618" height="402" alt="image" src="https://github.com/user-attachments/assets/f517467f-c559-47c2-94f9-0fe6942ffb35" />
+
+
 
 🗄️ Database Schema (MySQL)
 
@@ -109,7 +92,7 @@ Option 1 — XAMPP / Laragon / WAMP
 
 Clone this repository:
 
-git clone https://github.com/<username>/<repo>.git
+git clone https://github.com/fatimahazzahraofficialreal/fatimahnotes2.git
 
 
 Move the folder to your web root:
