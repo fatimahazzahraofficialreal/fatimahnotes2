@@ -49,6 +49,11 @@
   }
   .saveBadge{font-size:12px;opacity:.7}
   .btn{padding:8px 12px;border-radius:10px;border:1px solid #ddd;background:#fff;cursor:pointer}
+  .entry-menu-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:2px 6px;color:#555;transition:.1s;}
+  .entry-menu-btn:hover{color:#000;}
+  .entry-menu{position:absolute;right:10px;top:28px;display:none;background:#fff;border:1px solid #ccc;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,.1);z-index:10;}
+  .entry-menu button{display:block;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;text-align:left;}
+  .entry-menu button:hover{background:#f5f5f5;}
 </style>
 </head>
 <body>
@@ -57,7 +62,7 @@
 <div class="topbar">
   <button class="back-btn" onclick="window.location.href='index.php'">← Back to Home</button>
   <h2 style="margin:0;font-weight:500;">My Journal</h2>
-  <span class="saveBadge" id="saveBadge">tersimpan</span>
+  <span class="saveBadge" id="saveBadge">saved</span>
 </div>
 
 <div class="wrap">
@@ -65,7 +70,7 @@
   <aside class="panel left">
     <div class="toolbar">
       <button class="btn" id="newEntry">+ Entry</button>
-      <input id="search" type="text" placeholder="Cari judul/tags..." style="flex:1">
+      <input id="search" type="text" placeholder="Search title/tags..." style="flex:1">
     </div>
     <div class="entries" id="entries"></div>
   </aside>
@@ -73,15 +78,15 @@
   <!-- RIGHT CONTENT -->
   <section class="panel" style="padding:14px 20px">
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-      <input id="title" type="text" placeholder="Judul catatan..." style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #ddd">
-      <select id="mood">
+      <input id="title" type="text" placeholder="Note title..." style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #ddd">
+      <select id="mood" title="Mood">
         <option>🙂</option><option>😐</option><option>😔</option>
         <option>🔥</option><option>💡</option><option>🙏</option>
       </select>
-      <input id="tags" type="text" placeholder="tags: kuliah, iot, refleksi" style="min-width:220px;padding:8px 10px;border-radius:8px;border:1px solid #ddd">
+      <input id="tags" type="text" placeholder="tags: study, iot, reflection" style="min-width:220px;padding:8px 10px;border-radius:8px;border:1px solid #ddd">
     </div>
 
-    <!-- Toolbar ala Word -->
+    <!-- Word-like toolbar -->
     <div class="ribbon" id="ribbon">
       <button onclick="format('bold')"><b>B</b></button>
       <button onclick="format('italic')"><i>I</i></button>
@@ -91,12 +96,12 @@
       <button onclick="format('formatBlock','H2')">H2</button>
       <button onclick="format('formatBlock','BLOCKQUOTE')">❝ Quote</button>
       <button onclick="insertLink()">🔗 Link</button>
-      <button id="addImg">📷 Gambar</button>
+      <button id="addImg">📷 Image</button>
       <button id="addVid">🎬 Video</button>
     </div>
 
     <!-- Editor area -->
-    <div id="content" class="editor" contenteditable="true" placeholder="Tulis cerita, ide, refleksi..."></div>
+    <div id="content" class="editor" contenteditable="true" placeholder="Write your thoughts, ideas, or reflections..."></div>
 
     <input type="file" id="imgInput" accept="image/*" hidden>
     <input type="file" id="vidInput" accept="video/*" hidden>
@@ -110,38 +115,38 @@
 <script>
 const journalId = <?php echo $jid; ?>;
 let currentId=null, all=[], t;
-const editor=document.getElementById('content');
-const saveBadge=document.getElementById('saveBadge');
+const editor = document.getElementById('content');
+const saveBadge = document.getElementById('saveBadge');
 
 /* === format tools === */
-function format(cmd,val=null){document.execCommand(cmd,false,val);scheduleSave();}
+function format(cmd,val=null){ document.execCommand(cmd,false,val); scheduleSave(); }
 function insertLink(){
-  const url=prompt('Masukkan URL:'); 
-  if(url) document.execCommand('createLink',false,url);
+  const url = prompt('Enter URL:');
+  if (url) document.execCommand('createLink', false, url);
   scheduleSave();
 }
 
 /* === Entry handling === */
 async function loadEntries(){
-  const r=await fetch(`backend/list_entries.php?journal_id=${journalId}`);
-  all=await r.json(); 
+  const r = await fetch(`backend/list_entries.php?journal_id=${journalId}`);
+  all = await r.json();
   renderList(all);
-  if(all.length && !currentId) openEntry(all[0].id);
+  if (all.length && !currentId) openEntry(all[0].id);
 }
 
-/* === Render daftar entry dengan menu ⋮ === */
+/* === Render entries with ⋮ menu === */
 function renderList(items){
-  const q=document.getElementById('search').value?.toLowerCase()||'';
-  const box=document.getElementById('entries'); 
-  box.innerHTML='';
-  
+  const q = document.getElementById('search').value?.toLowerCase() || '';
+  const box = document.getElementById('entries');
+  box.innerHTML = '';
+
   items
-    .filter(e=>(e.title||'').toLowerCase().includes(q)||(e.tags||'').toLowerCase().includes(q))
+    .filter(e => (e.title||'').toLowerCase().includes(q) || (e.tags||'').toLowerCase().includes(q))
     .forEach(e=>{
-      const div=document.createElement('div');
-      div.className='entry'+(e.id==currentId?' active':'');
-      div.style.position='relative';
-      div.innerHTML=`
+      const div = document.createElement('div');
+      div.className = 'entry' + (e.id==currentId?' active':'');
+      div.style.position = 'relative';
+      div.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div style="flex:1;min-width:0;">
             <strong>${escapeHTML(e.title||'Untitled')}</strong>
@@ -149,11 +154,11 @@ function renderList(items){
           </div>
           <button class="entry-menu-btn" onclick="toggleEntryMenu(event,${e.id})">⋮</button>
           <div class="entry-menu" id="entry-menu-${e.id}">
-            <button onclick="deleteEntry(${e.id})">🗑 Hapus</button>
+            <button onclick="deleteEntry(${e.id})">🗑 Delete</button>
           </div>
         </div>`;
-      div.onclick=ev=>{
-        if(!ev.target.classList.contains('entry-menu-btn') && !ev.target.closest('.entry-menu'))
+      div.onclick = ev=>{
+        if (!ev.target.classList.contains('entry-menu-btn') && !ev.target.closest('.entry-menu'))
           openEntry(e.id);
       };
       box.appendChild(div);
@@ -162,139 +167,127 @@ function renderList(items){
 
 /* === Open entry === */
 async function openEntry(id){
-  const r=await fetch(`backend/get_entry.php?id=${id}`); 
-  const e=await r.json();
-  currentId=e.id;
-  document.getElementById('title').value=e.title||'';
-  editor.innerHTML=e.content||'';
-  document.getElementById('mood').value=e.mood||'🙂';
-  document.getElementById('tags').value=e.tags||'';
-  document.getElementById('player').src=e.video_path||'';
+  const r = await fetch(`backend/get_entry.php?id=${id}`);
+  const e = await r.json();
+  currentId = e.id;
+  document.getElementById('title').value = e.title || '';
+  editor.innerHTML = e.content || '';
+  document.getElementById('mood').value = e.mood || '🙂';
+  document.getElementById('tags').value = e.tags || '';
+  document.getElementById('player').src = e.video_path || '';
   renderList(all);
 }
 
-/* === Tambah entry === */
-document.getElementById('newEntry').onclick=async()=>{
-  const f=new FormData(); 
-  f.append('journal_id',journalId); 
-  f.append('title','Untitled');
-  const r=await fetch('backend/create_entry.php',{method:'POST',body:f});
-  const j=await r.json(); 
-  await loadEntries(); 
+/* === Add entry === */
+document.getElementById('newEntry').onclick = async ()=>{
+  const f = new FormData();
+  f.append('journal_id', journalId);
+  f.append('title', 'Untitled');
+  const r = await fetch('backend/create_entry.php', { method:'POST', body:f });
+  const j = await r.json();
+  await loadEntries();
   openEntry(j.id);
 };
 
-/* === Toggle menu titik tiga === */
+/* === ⋮ menu toggle === */
 function toggleEntryMenu(ev,id){
   ev.stopPropagation();
   document.querySelectorAll('.entry-menu').forEach(m=>m.style.display='none');
-  const menu=document.getElementById('entry-menu-'+id);
-  if(menu) menu.style.display=(menu.style.display==='block'?'none':'block');
+  const menu = document.getElementById('entry-menu-'+id);
+  if (menu) menu.style.display = (menu.style.display==='block' ? 'none' : 'block');
 }
-document.addEventListener('click',()=>document.querySelectorAll('.entry-menu').forEach(m=>m.style.display='none'));
+document.addEventListener('click', ()=>document.querySelectorAll('.entry-menu').forEach(m=>m.style.display='none'));
 
-/* === Hapus entry === */
+/* === Delete entry === */
 async function deleteEntry(id){
-  if(!confirm('Yakin ingin menghapus entry ini?'))return;
-  const r=await fetch('backend/delete_entry.php',{
+  if (!confirm('Delete this entry?')) return;
+  const r = await fetch('backend/delete_entry.php', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({id})
   });
-  const j=await r.json();
-  if(j.success){
-    all=all.filter(e=>e.id!=id);
+  const j = await r.json();
+  if (j.success){
+    all = all.filter(e=>e.id!=id);
     renderList(all);
-    if(currentId==id){
-      editor.innerHTML='';
-      document.getElementById('title').value='';
-      currentId=null;
+    if (currentId==id){
+      editor.innerHTML=''; document.getElementById('title').value=''; currentId=null;
     }
-  }else alert('Gagal menghapus: '+(j.error||'unknown'));
+  } else alert('Failed to delete: ' + (j.error || 'unknown error'));
 }
 
-/* === Auto save === */
+/* === Autosave === */
 ['title','mood','tags'].forEach(id=>document.getElementById(id).addEventListener('input',scheduleSave));
 editor.addEventListener('input',scheduleSave);
 
-function scheduleSave(){
-  clearTimeout(t);
-  saveBadge.textContent='menyimpan...';
-  t=setTimeout(save,800);
-}
+function scheduleSave(){ clearTimeout(t); saveBadge.textContent='saving...'; t=setTimeout(save,800); }
 
 async function save(){
-  if(!currentId)return;
-  const payload={
-    id:currentId,
-    title:document.getElementById('title').value,
-    content:editor.innerHTML,
-    mood:document.getElementById('mood').value,
-    tags:document.getElementById('tags').value
+  if(!currentId) return;
+  const payload = {
+    id: currentId,
+    title: document.getElementById('title').value,
+    content: editor.innerHTML,
+    mood: document.getElementById('mood').value,
+    tags: document.getElementById('tags').value
   };
-  await fetch('backend/update_entry.php',{
+  await fetch('backend/update_entry.php', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
+    body: JSON.stringify(payload)
   });
-  saveBadge.textContent='tersimpan';
-  const idx=all.findIndex(e=>e.id==currentId);
-  if(idx>-1){
-    all[idx].title=payload.title;
-    all[idx].tags=payload.tags;
-    all[idx].mood=payload.mood;
+  saveBadge.textContent = 'saved';
+  const idx = all.findIndex(e=>e.id==currentId);
+  if (idx>-1){
+    all[idx].title = payload.title;
+    all[idx].tags  = payload.tags;
+    all[idx].mood  = payload.mood;
     renderList(all);
   }
 }
 
-/* === Upload Gambar === */
-document.getElementById('addImg').onclick=()=>document.getElementById('imgInput').click();
-document.getElementById('imgInput').onchange=async e=>{
-  if(!currentId||!e.target.files[0])return;
-  const fd=new FormData(); 
-  fd.append('id',currentId); 
-  fd.append('image',e.target.files[0]);
-  const r=await fetch('backend/upload_entry_image.php',{method:'POST',body:fd});
-  const j=await r.json();
-  if(j.success){
-    insertHTML(`<img src="${j.path}" alt="">`);
-    scheduleSave();
-  }
+/* === Image upload === */
+document.getElementById('addImg').onclick = ()=>document.getElementById('imgInput').click();
+document.getElementById('imgInput').onchange = async e=>{
+  if(!currentId || !e.target.files[0]) return;
+  const fd = new FormData();
+  fd.append('id', currentId);
+  fd.append('image', e.target.files[0]);
+  const r = await fetch('backend/upload_entry_image.php', { method:'POST', body:fd });
+  const j = await r.json();
+  if(j.success){ insertHTML(`<img src="${j.path}" alt="">`); scheduleSave(); }
 };
 
-/* === Upload Video / Embed === */
-document.getElementById('addVid').onclick=()=>{
-  const opt=confirm('OK = Upload video dari komputer\nCancel = Sematkan link YouTube/mp4');
-  if(opt)document.getElementById('vidInput').click();
+/* === Video upload / embed === */
+document.getElementById('addVid').onclick = ()=>{
+  const opt = confirm('OK = Upload a video file\nCancel = Embed YouTube/mp4 link');
+  if (opt) document.getElementById('vidInput').click();
   else{
-    const url=prompt('Masukkan URL video:'); 
-    if(!url)return;
-    const yt=parseYouTube(url);
-    if(yt)insertHTML(`<iframe src="https://www.youtube.com/embed/${yt}" allowfullscreen></iframe>`);
-    else if(/\.(mp4|webm|ogg)$/i.test(url))insertHTML(`<video controls src="${url}"></video>`);
+    const url = prompt('Enter video URL (YouTube/mp4):');
+    if (!url) return;
+    const yt = parseYouTube(url);
+    if (yt) insertHTML(`<iframe src="https://www.youtube.com/embed/${yt}" allowfullscreen></iframe>`);
+    else if (/\.(mp4|webm|ogg)$/i.test(url)) insertHTML(`<video controls src="${url}"></video>`);
     scheduleSave();
   }
 };
-document.getElementById('vidInput').onchange=async e=>{
-  if(!currentId||!e.target.files[0])return;
-  const fd=new FormData(); 
-  fd.append('id',currentId); 
-  fd.append('video',e.target.files[0]);
-  const r=await fetch('backend/upload_entry_video.php',{method:'POST',body:fd});
-  const j=await r.json();
-  if(j.success){
-    insertHTML(`<video controls src="${j.path}"></video>`);
-    scheduleSave();
-  }
+document.getElementById('vidInput').onchange = async e=>{
+  if(!currentId || !e.target.files[0]) return;
+  const fd = new FormData();
+  fd.append('id', currentId);
+  fd.append('video', e.target.files[0]);
+  const r = await fetch('backend/upload_entry_video.php', { method:'POST', body:fd });
+  const j = await r.json();
+  if(j.success){ insertHTML(`<video controls src="${j.path}"></video>`); scheduleSave(); }
 };
 
 /* === Insert HTML helper === */
 function insertHTML(html){
-  const sel=window.getSelection(); 
-  if(!sel.rangeCount)return;
-  const range=sel.getRangeAt(0);
+  const sel = window.getSelection();
+  if(!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
   range.deleteContents();
-  const frag=document.createRange().createContextualFragment(html);
+  const frag = document.createRange().createContextualFragment(html);
   range.insertNode(frag);
 }
 
@@ -306,7 +299,7 @@ function parseYouTube(url){
     if(/youtube\.com$/.test(u.hostname)){
       if(u.searchParams.get('v'))return u.searchParams.get('v');
       if(u.pathname.startsWith('/shorts/'))return u.pathname.split('/')[2];
-      if(u.pathname.startsWith('/embed/'))return u.pathname.split('/')[2];
+      if(u.pathname.startsWith('/embed/')) return u.pathname.split('/')[2];
     }
   }catch{return null;}
   return null;
@@ -323,39 +316,5 @@ document.getElementById('search').addEventListener('input',()=>renderList(all));
 
 loadEntries();
 </script>
-
-<style>
-.entry-menu-btn{
-  background:none;
-  border:none;
-  font-size:18px;
-  cursor:pointer;
-  padding:2px 6px;
-  color:#555;
-  transition:.1s;
-}
-.entry-menu-btn:hover{color:#000;}
-.entry-menu{
-  position:absolute;
-  right:10px;
-  top:28px;
-  display:none;
-  background:#fff;
-  border:1px solid #ccc;
-  border-radius:8px;
-  box-shadow:0 4px 10px rgba(0,0,0,.1);
-  z-index:10;
-}
-.entry-menu button{
-  display:block;
-  width:100%;
-  padding:8px 12px;
-  border:none;
-  background:none;
-  cursor:pointer;
-  text-align:left;
-}
-.entry-menu button:hover{background:#f5f5f5;}
-</style>
 </body>
 </html>
