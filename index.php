@@ -49,73 +49,84 @@
   <section id="journalContainer" class="journal-collection"></section>
 
   <script>
-const elList=document.getElementById('journalContainer');
-const elErr=document.getElementById('error');
+const elList = document.getElementById('journalContainer');
+const elErr  = document.getElementById('error');
 
 async function loadJournals(){
-  elErr.textContent='';
-  elList.innerHTML='<p style="opacity:.7">Loading...</p>';
+  elErr.textContent = '';
+  elList.innerHTML = '<p style="opacity:.7">Loading...</p>';
   try{
-    const r=await fetch('backend/get_journals.php',{cache:'no-store'});
-    const text=await r.text();
+    const r = await fetch('backend/get_journals.php', { cache: 'no-store' });
+    const text = await r.text();
     let data;
-    try{data=JSON.parse(text);}catch{elErr.textContent='Response is not JSON: '+text.slice(0,120);return;}
-    if(!Array.isArray(data)){elErr.textContent='Data format is not correct';return;}
-    elList.innerHTML='';
-    if(data.length===0){elList.innerHTML='<p style="opacity:.6">There are no journals yet. Click + New Journal.</p>';return;}
-    data.forEach(j=>{
-      const d=document.createElement('div');
-      d.className='journal-card';
-      d.style.background=j.color||'#E6D0B8';
-      <!-- di index.php, dalam loop data.forEach(j => { ... }) -->
-      d.innerHTML = `
-      <button class="menu-btn" onclick="toggleMenu(event,${j.id})">⋮</button>
-      <div class="menu" id="menu-${j.id}">
-      <button onclick="renameJournal(${j.id}, '${(j.title||'Untitled').replace(/'/g,"\\'")}')">✏️ Change name</button>
-      <button onclick="deleteJournal(${j.id})">🗑 Delete Journal</button>
-      </div>
-      <h3 id="title-${j.id}">${escapeHTML(j.title || 'Untitled')}</h3>
-      <small>${new Date(j.created_at).toLocaleString()}</small>
-`;
+    try { data = JSON.parse(text); }
+    catch { elErr.textContent = 'Response is not JSON: ' + text.slice(0,120); return; }
 
-      d.addEventListener('click',e=>{
-        if(!e.target.classList.contains('menu-btn') && !e.target.closest('.menu'))
-          location.href=`journal.php?id=${j.id}`;
+    if (!Array.isArray(data)) { elErr.textContent = 'Unexpected data format.'; return; }
+
+    elList.innerHTML = '';
+    if (data.length === 0) {
+      elList.innerHTML = '<p style="opacity:.6">No journals yet. Click + New Journal.</p>';
+      return;
+    }
+
+    data.forEach(j=>{
+      const d = document.createElement('div');
+      d.className = 'journal-card';
+      d.style.background = j.color || '#E6D0B8';
+      d.innerHTML = `
+        <button class="menu-btn" onclick="toggleMenu(event,${j.id})">⋮</button>
+        <div class="menu" id="menu-${j.id}">
+          <button onclick="renameJournal(${j.id}, '${(j.title||'Untitled').replace(/'/g,"\\'")}')">✏️ Rename</button>
+          <button onclick="deleteJournal(${j.id})">🗑 Delete Journal</button>
+        </div>
+        <h3 id="title-${j.id}">${escapeHTML(j.title || 'Untitled')}</h3>
+        <small>${new Date(j.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</small>
+      `;
+      d.addEventListener('click', e=>{
+        if (!e.target.classList.contains('menu-btn') && !e.target.closest('.menu')) {
+          location.href = `journal.php?id=${j.id}`;
+        }
       });
       elList.appendChild(d);
     });
   }catch(e){
-    elErr.textContent='Failed to load data: '+e.message;
+    elErr.textContent = 'Failed to load data: ' + e.message;
   }
 }
 
-function escapeHTML(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
+function escapeHTML(s){
+  return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+}
 loadJournals();
 
 // === Toggle menu ===
 function toggleMenu(ev,id){
   ev.stopPropagation();
   document.querySelectorAll('.menu').forEach(m=>m.style.display='none');
-  const m=document.getElementById('menu-'+id);
-  if(m)m.style.display=(m.style.display==='block'?'none':'block');
+  const m = document.getElementById('menu-'+id);
+  if (m) m.style.display = (m.style.display==='block' ? 'none' : 'block');
 }
 document.addEventListener('click',()=>document.querySelectorAll('.menu').forEach(m=>m.style.display='none'));
 
-// === Hapus jurnal ===
+// === Delete journal ===
 async function deleteJournal(id){
-  if(!confirm('Are you sure you want to delete this journal? All notes in it will also be deleted.'))return;
-  const r=await fetch('backend/delete_journal.php',{
+  if (!confirm('Delete this journal? All its entries will be removed.')) return;
+  const r = await fetch('backend/delete_journal.php',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({id})
   });
-  const j=await r.json();
-  if(j.success){
+  const j = await r.json();
+  if (j.success){
     document.getElementById('menu-'+id).closest('.journal-card').remove();
-  }else alert('Failed to delete: '+(j.error||'unknown'));
+  } else {
+    alert('Failed to delete: ' + (j.error || 'unknown error'));
+  }
 }
 
-async function renameJournal(id, currentTitle) {
+// === Rename journal ===
+async function renameJournal(id, currentTitle){
   const title = prompt('New journal name:', currentTitle || '');
   if (!title || title.trim() === '') return;
 
@@ -124,40 +135,39 @@ async function renameJournal(id, currentTitle) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        id,                   // ⬅️ update mode
+        id,
         title: title.trim(),
-        content: '',          // tetap aman, tidak mengubah konten
-        color: '#E6D0B8'      // biarkan sama (server tidak wajib memakainya)
+        content: '',
+        color: '#E6D0B8'
       })
     });
     const json = await res.json();
     if (json.success) {
-      // update judul pada kartu tanpa reload
       const h3 = document.getElementById(`title-${id}`);
       if (h3) h3.textContent = title.trim();
-      // tutup menu
       const menu = document.getElementById(`menu-${id}`);
       if (menu) menu.style.display = 'none';
     } else {
-      alert('Failed to change name: ' + (json.error || 'unknown'));
+      alert('Failed to rename: ' + (json.error || 'unknown error'));
     }
   } catch (e) {
     alert('Request error: ' + e.message);
   }
 }
 
-// === Tambah jurnal baru ===
-document.getElementById('newJournalBtn').addEventListener('click',async()=>{
-  const title=prompt('Judul jurnal baru?'); if(!title)return;
-  const res=await fetch('backend/save_journal.php',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({title,content:'',color:'#E6D0B8'})
+// === Create new journal ===
+document.getElementById('newJournalBtn').addEventListener('click', async ()=>{
+  const title = prompt('New journal title?');
+  if (!title) return;
+  const res = await fetch('backend/save_journal.php', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ title, content:'', color:'#E6D0B8' })
   });
-  const json=await res.json();
-  if(json.success&&json.id)location.href=`journal.php?id=${json.id}`;
-  else alert('Gagal menyimpan: '+(json.error||'Unknown error'));
+  const json = await res.json();
+  if (json.success && json.id) location.href = `journal.php?id=${json.id}`;
+  else alert('Failed to save: ' + (json.error || 'Unknown error'));
 });
   </script>
 </body>
 </html>
-
