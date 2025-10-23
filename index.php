@@ -59,10 +59,10 @@ async function loadJournals(){
     const r=await fetch('backend/get_journals.php',{cache:'no-store'});
     const text=await r.text();
     let data;
-    try{data=JSON.parse(text);}catch{elErr.textContent='Response bukan JSON: '+text.slice(0,120);return;}
-    if(!Array.isArray(data)){elErr.textContent='Format data tidak sesuai';return;}
+    try{data=JSON.parse(text);}catch{elErr.textContent='Response is not JSON: '+text.slice(0,120);return;}
+    if(!Array.isArray(data)){elErr.textContent='Data format is not correct';return;}
     elList.innerHTML='';
-    if(data.length===0){elList.innerHTML='<p style="opacity:.6">Belum ada jurnal. Klik + New Journal.</p>';return;}
+    if(data.length===0){elList.innerHTML='<p style="opacity:.6">There are no journals yet. Click + New Journal.</p>';return;}
     data.forEach(j=>{
       const d=document.createElement('div');
       d.className='journal-card';
@@ -71,8 +71,8 @@ async function loadJournals(){
       d.innerHTML = `
       <button class="menu-btn" onclick="toggleMenu(event,${j.id})">⋮</button>
       <div class="menu" id="menu-${j.id}">
-      <button onclick="renameJournal(${j.id}, '${(j.title||'Untitled').replace(/'/g,"\\'")}')">✏️ Ganti Nama</button>
-      <button onclick="deleteJournal(${j.id})">🗑 Hapus Jurnal</button>
+      <button onclick="renameJournal(${j.id}, '${(j.title||'Untitled').replace(/'/g,"\\'")}')">✏️ Change name</button>
+      <button onclick="deleteJournal(${j.id})">🗑 Delete Journal</button>
       </div>
       <h3 id="title-${j.id}">${escapeHTML(j.title || 'Untitled')}</h3>
       <small>${new Date(j.created_at).toLocaleString()}</small>
@@ -85,7 +85,7 @@ async function loadJournals(){
       elList.appendChild(d);
     });
   }catch(e){
-    elErr.textContent='Gagal memuat data: '+e.message;
+    elErr.textContent='Failed to load data: '+e.message;
   }
 }
 
@@ -103,7 +103,7 @@ document.addEventListener('click',()=>document.querySelectorAll('.menu').forEach
 
 // === Hapus jurnal ===
 async function deleteJournal(id){
-  if(!confirm('Yakin ingin menghapus jurnal ini? Semua catatan di dalamnya juga akan terhapus.'))return;
+  if(!confirm('Are you sure you want to delete this journal? All notes in it will also be deleted.'))return;
   const r=await fetch('backend/delete_journal.php',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -112,11 +112,11 @@ async function deleteJournal(id){
   const j=await r.json();
   if(j.success){
     document.getElementById('menu-'+id).closest('.journal-card').remove();
-  }else alert('Gagal menghapus: '+(j.error||'unknown'));
+  }else alert('Failed to delete: '+(j.error||'unknown'));
 }
 
 async function renameJournal(id, currentTitle) {
-  const title = prompt('Nama jurnal baru:', currentTitle || '');
+  const title = prompt('New journal name:', currentTitle || '');
   if (!title || title.trim() === '') return;
 
   try {
@@ -139,7 +139,7 @@ async function renameJournal(id, currentTitle) {
       const menu = document.getElementById(`menu-${id}`);
       if (menu) menu.style.display = 'none';
     } else {
-      alert('Gagal mengganti nama: ' + (json.error || 'unknown'));
+      alert('Failed to change name: ' + (json.error || 'unknown'));
     }
   } catch (e) {
     alert('Request error: ' + e.message);
@@ -160,3 +160,4 @@ document.getElementById('newJournalBtn').addEventListener('click',async()=>{
   </script>
 </body>
 </html>
+
